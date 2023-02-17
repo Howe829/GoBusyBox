@@ -1,4 +1,4 @@
-module GoBusyBox
+module github.com/Howe829/GoBusyBox
 
 go 1.19
 
