@@ -19,7 +19,7 @@ func TestHttpClient_Get(t *testing.T) {
 	headers.Set(HeaderSecFetchUser, SecFetchUserDefault)
 	headers.Set(HeaderTe, TeTrailers)
 	client := HttpClient{EnableProxy: true, AllowRedirect: false}
-	res, err := client.Get("https://www.ti.com.cn/secure-link-forward/?gotoUrl=https://www.ti.com.cn", headers)
+	res, err := client.Get("https://httobin.org/ip", headers)
 	if err != nil {
 
 	}
