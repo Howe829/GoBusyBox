@@ -68,28 +68,35 @@ type HttpResponse struct {
 	StatusCode *int
 	Result     gjson.Result
 	Elapsed    time.Duration
+	Resp       *http.Response
 }
 
 type HttpClient struct {
-	EnableProxy bool
-	ava         bool
-	client      *http.Client
-	ProxyStr    string
+	EnableProxy   bool
+	ava           bool
+	client        *http.Client
+	ProxyStr      string
+	AllowRedirect bool
+	Timeout       int
 }
 
 func (httpClient *HttpClient) Init() {
+	if httpClient.Timeout == 0 {
+		httpClient.Timeout = 60
+	}
+	httpClient.client = &http.Client{Timeout: time.Duration(httpClient.Timeout) * time.Second, CheckRedirect: myCheckRedirect}
 	if httpClient.EnableProxy {
 		httpClient.ProxyStr = ProxyM.GetRandomOne()
 		proxy, _ := url.Parse(httpClient.ProxyStr)
-		fmt.Println(proxy)
 		tr := &http.Transport{
 			Proxy:           http.ProxyURL(proxy),
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
-		httpClient.client = &http.Client{Timeout: 60 * time.Second, Transport: tr}
-	} else {
-		httpClient.client = &http.Client{Timeout: 60 * time.Second}
+		httpClient.client.Transport = tr
+	}
 
+	if !httpClient.AllowRedirect {
+		httpClient.client.CheckRedirect = myCheckRedirect
 	}
 	httpClient.ava = true
 }
@@ -108,6 +115,14 @@ func (httpClient *HttpClient) Post(destination string, header http.Header, data 
 		Elapsed:    9999,
 	}
 	defer RequestTrack(httpResponse)
+	defer func() {
+		r := recover()
+		switch r.(type) {
+		case http.Response:
+			resp := r.(http.Response)
+			httpResponse.StatusCode = &resp.StatusCode
+		}
+	}()
 	var body io.Reader
 	switch data.(type) {
 	case string:
@@ -131,6 +146,7 @@ func (httpClient *HttpClient) Post(destination string, header http.Header, data 
 	request, err := http.NewRequest("POST", destination, body)
 	request.Header = header
 	response, err := httpClient.client.Do(request)
+	httpResponse.Resp = response
 	if err != nil {
 		return &httpResponse, err
 	}
@@ -167,10 +183,11 @@ func (httpClient *HttpClient) Get(destination string, header http.Header) (*Http
 	request, err := http.NewRequest("GET", destination, body)
 	request.Header = header
 	response, err := httpClient.client.Do(request)
+	statusCode = response.StatusCode
+	httpResponse.Resp = response
 	if err != nil {
 		return &httpResponse, err
 	}
-	statusCode = response.StatusCode
 	content, err := io.ReadAll(response.Body)
 	if err != nil {
 		return &httpResponse, err
@@ -178,4 +195,11 @@ func (httpClient *HttpClient) Get(destination string, header http.Header) (*Http
 	defer response.Body.Close()
 	httpResponse.Result = gjson.Parse(string(content))
 	return &httpResponse, nil
+}
+
+func myCheckRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) >= 1 {
+		return errors.New("stop redirects")
+	}
+	return nil
 }

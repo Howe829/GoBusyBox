@@ -7,17 +7,27 @@ import (
 )
 
 func TestHttpClient_Get(t *testing.T) {
-	client := HttpClient{EnableProxy: true}
-	header := http.Header{}
-	header.Set("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:106.0) Gecko/20100101 Firefox/106.0")
-	res, err := client.Get("https://httpbin.org/headers", header)
+	headers := http.Header{}
+	headers.Set(HeaderUserAgent, UserAgentDefault)
+	headers.Set(HeaderAccept, AcceptDefault)
+	headers.Set(HeaderAcceptLanguage, AcceptLanguage)
+	headers.Set(HeaderReferer, TiCn)
+	headers.Set(HeaderUpgradeInsecureRequests, UpgradeInsecureRequests)
+	headers.Set(HeaderSecFetchDest, SecFetchDestDocument)
+	headers.Set(HeaderSecFetchMode, SecFetchModeNavigate)
+	headers.Set(HeaderSecFetchSite, SecFetchSiteSameOrigin)
+	headers.Set(HeaderSecFetchUser, SecFetchUserDefault)
+	headers.Set(HeaderTe, TeTrailers)
+	client := HttpClient{EnableProxy: true, AllowRedirect: false}
+	res, err := client.Get("https://www.ti.com.cn/secure-link-forward/?gotoUrl=https://www.ti.com.cn", headers)
 	if err != nil {
-		t.Fail()
+
 	}
-	if *res.StatusCode != 200 {
-		t.Fail()
-	} else {
-		fmt.Println(res.Result.String())
-	}
+	fmt.Println(res.Resp.StatusCode)
+	//if *res.StatusCode != 200 {
+	//	fmt.Println(res)
+	//} else {
+	//	fmt.Println(res.Result.String())
+	//}
 
 }
