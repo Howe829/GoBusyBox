@@ -35,6 +35,7 @@ func (proxyManager *ProxyManager) Init() {
 		proxySegs := strings.Split(proxyLines[line], ":")
 		if len(proxySegs) < 4 {
 			fmt.Println(fmt.Sprintf("PROXY %s LINE: %d FORMAT ERROR WILL BE IGNORED", proxyLines[line], line))
+			continue
 		}
 		proxy := fmt.Sprintf("http://%s:%s@%s:%s", proxySegs[2], proxySegs[3], proxySegs[0], proxySegs[1])
 		proxyManager.proxies = append(proxyManager.proxies, proxy)
@@ -93,7 +94,7 @@ func (httpClient *HttpClient) Init() {
 	httpClient.ava = true
 }
 
-func (httpClient *HttpClient) Post(destination string, header map[string]string, data interface{}) (*HttpResponse, error) {
+func (httpClient *HttpClient) Post(destination string, header http.Header, data interface{}) (*HttpResponse, error) {
 	if !httpClient.ava {
 		httpClient.Init()
 	}
@@ -128,9 +129,7 @@ func (httpClient *HttpClient) Post(destination string, header map[string]string,
 	}
 
 	request, err := http.NewRequest("POST", destination, body)
-	for k, v := range header {
-		request.Header.Set(k, v)
-	}
+	request.Header = header
 	response, err := httpClient.client.Do(request)
 	if err != nil {
 		return &httpResponse, err
@@ -150,7 +149,7 @@ func RequestTrack(response HttpResponse) {
 
 	log.Println(fmt.Sprintf("%s STATUS CODE:%v COST:%s", response.Url, *response.StatusCode, elapsed))
 }
-func (httpClient *HttpClient) Get(destination string, header map[string]string) (*HttpResponse, error) {
+func (httpClient *HttpClient) Get(destination string, header http.Header) (*HttpResponse, error) {
 	if !httpClient.ava {
 		httpClient.Init()
 	}
@@ -166,10 +165,7 @@ func (httpClient *HttpClient) Get(destination string, header map[string]string) 
 	defer RequestTrack(httpResponse)
 	var body io.Reader
 	request, err := http.NewRequest("GET", destination, body)
-	for k, v := range header {
-		request.Header.Set(k, v)
-	}
-
+	request.Header = header
 	response, err := httpClient.client.Do(request)
 	if err != nil {
 		return &httpResponse, err
