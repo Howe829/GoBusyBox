@@ -33,6 +33,9 @@ func (proxyManager *ProxyManager) Init() {
 	proxyLines := strings.Split(fileContent, "\n")
 	for line := range proxyLines {
 		proxySegs := strings.Split(proxyLines[line], ":")
+		if len(proxySegs) < 4 {
+			fmt.Println(fmt.Sprintf("PROXY %s LINE: %d FORMAT ERROR WILL BE IGNORED", proxyLines[line], line))
+		}
 		proxy := fmt.Sprintf("http://%s:%s@%s:%s", proxySegs[2], proxySegs[3], proxySegs[0], proxySegs[1])
 		proxyManager.proxies = append(proxyManager.proxies, proxy)
 	}
