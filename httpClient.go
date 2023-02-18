@@ -66,7 +66,6 @@ type HttpResponse struct {
 	Url        string
 	StartTime  time.Time
 	StatusCode *int
-	Result     gjson.Result
 	Elapsed    time.Duration
 	Resp       *http.Response
 }
@@ -111,7 +110,6 @@ func (httpClient *HttpClient) Post(destination string, header http.Header, data 
 		StatusCode: &statusCode,
 		Url:        destination,
 		StartTime:  time.Now(),
-		Result:     gjson.Result{},
 		Elapsed:    9999,
 	}
 	defer RequestTrack(httpResponse)
@@ -151,12 +149,6 @@ func (httpClient *HttpClient) Post(destination string, header http.Header, data 
 		return &httpResponse, err
 	}
 	statusCode = response.StatusCode
-	content, err := io.ReadAll(response.Body)
-	if err != nil {
-		return &httpResponse, err
-	}
-	defer response.Body.Close()
-	httpResponse.Result = gjson.Parse(string(content))
 	return &httpResponse, nil
 }
 func RequestTrack(response HttpResponse) {
@@ -165,6 +157,25 @@ func RequestTrack(response HttpResponse) {
 
 	log.Println(fmt.Sprintf("%s STATUS CODE:%v COST:%s", response.Url, *response.StatusCode, elapsed))
 }
+
+func (httpResponse *HttpResponse) Json() (gjson.Result, error) {
+	content, err := io.ReadAll(httpResponse.Resp.Body)
+	if err != nil {
+		return gjson.Result{}, err
+	}
+	defer httpResponse.Resp.Body.Close()
+	return gjson.Parse(string(content)), nil
+}
+
+func (httpResponse *HttpResponse) Text() (string, error) {
+	content, err := io.ReadAll(httpResponse.Resp.Body)
+	if err != nil {
+		return "", err
+	}
+	defer httpResponse.Resp.Body.Close()
+	return string(content), nil
+}
+
 func (httpClient *HttpClient) Get(destination string, header http.Header) (*HttpResponse, error) {
 	if !httpClient.ava {
 		httpClient.Init()
@@ -175,7 +186,6 @@ func (httpClient *HttpClient) Get(destination string, header http.Header) (*Http
 		StatusCode: &statusCode,
 		Url:        destination,
 		StartTime:  time.Now(),
-		Result:     gjson.Result{},
 		Elapsed:    9999,
 	}
 	defer RequestTrack(httpResponse)
@@ -188,12 +198,7 @@ func (httpClient *HttpClient) Get(destination string, header http.Header) (*Http
 	if err != nil {
 		return &httpResponse, err
 	}
-	content, err := io.ReadAll(response.Body)
-	if err != nil {
-		return &httpResponse, err
-	}
-	defer response.Body.Close()
-	httpResponse.Result = gjson.Parse(string(content))
+
 	return &httpResponse, nil
 }
 

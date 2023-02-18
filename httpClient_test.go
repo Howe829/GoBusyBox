@@ -19,12 +19,13 @@ func TestHttpClient_Get(t *testing.T) {
 	headers.Set(HeaderSecFetchUser, SecFetchUserDefault)
 	headers.Set(HeaderTe, TeTrailers)
 	client := HttpClient{EnableProxy: true, AllowRedirect: true}
-	res, err := client.Get("https://www.ti.com.cn/secure-link-forward/?gotoUrl=https://www.ti.com.cn", headers)
+	res, err := client.Get("https://httpbin.org/ip", headers)
 	if err != nil {
 		fmt.Println(err.Error())
 
 	}
-	fmt.Println(res.Resp.StatusCode)
+	text, err := res.Json()
+	fmt.Println(text.String())
 	//if *res.StatusCode != 200 {
 	//	fmt.Println(res)
 	//} else {
