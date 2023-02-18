@@ -84,7 +84,7 @@ func (httpClient *HttpClient) Init() {
 	if httpClient.Timeout == 0 {
 		httpClient.Timeout = 60
 	}
-	httpClient.client = &http.Client{Timeout: time.Duration(httpClient.Timeout) * time.Second, CheckRedirect: myCheckRedirect}
+	httpClient.client = &http.Client{Timeout: time.Duration(httpClient.Timeout) * time.Second}
 	if httpClient.EnableProxy {
 		httpClient.ProxyStr = ProxyM.GetRandomOne()
 		proxy, _ := url.Parse(httpClient.ProxyStr)
