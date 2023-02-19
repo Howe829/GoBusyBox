@@ -87,19 +87,23 @@ func (httpClient *HttpClient) Init() {
 	gCurCookiejar, _ := cookiejar.New(nil)
 	httpClient.client = &http.Client{Timeout: time.Duration(httpClient.Timeout) * time.Second, Jar: gCurCookiejar}
 	if httpClient.EnableProxy {
-		httpClient.ProxyStr = ProxyM.GetRandomOne()
-		proxy, _ := url.Parse(httpClient.ProxyStr)
-		tr := &http.Transport{
-			Proxy:           http.ProxyURL(proxy),
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		httpClient.client.Transport = tr
+		httpClient.ChangeProxy()
 	}
 
 	if !httpClient.AllowRedirect {
 		httpClient.client.CheckRedirect = myCheckRedirect
 	}
 	httpClient.ava = true
+}
+
+func (httpClient *HttpClient) ChangeProxy() {
+	httpClient.ProxyStr = ProxyM.GetRandomOne()
+	proxy, _ := url.Parse(httpClient.ProxyStr)
+	tr := &http.Transport{
+		Proxy:           http.ProxyURL(proxy),
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	httpClient.client.Transport = tr
 }
 
 func (httpClient *HttpClient) Post(destination string, header http.Header, data interface{}) (*HttpResponse, error) {
