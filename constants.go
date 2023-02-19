@@ -19,6 +19,7 @@ const (
 
 const (
 	TiCn                    = "https://www.ti.com.cn/"
+	ContentTypeUrlEncoded   = "application/x-www-form-urlencoded"
 	SecFetchDestDocument    = "document"
 	UpgradeInsecureRequests = "1"
 	SecFetchModeNavigate    = "navigate"

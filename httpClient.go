@@ -10,6 +10,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"strings"
 	"time"
@@ -83,7 +84,8 @@ func (httpClient *HttpClient) Init() {
 	if httpClient.Timeout == 0 {
 		httpClient.Timeout = 60
 	}
-	httpClient.client = &http.Client{Timeout: time.Duration(httpClient.Timeout) * time.Second}
+	gCurCookiejar, _ := cookiejar.New(nil)
+	httpClient.client = &http.Client{Timeout: time.Duration(httpClient.Timeout) * time.Second, Jar: gCurCookiejar}
 	if httpClient.EnableProxy {
 		httpClient.ProxyStr = ProxyM.GetRandomOne()
 		proxy, _ := url.Parse(httpClient.ProxyStr)
@@ -142,6 +144,10 @@ func (httpClient *HttpClient) Post(destination string, header http.Header, data 
 	}
 
 	request, err := http.NewRequest("POST", destination, body)
+	if err != nil {
+		fmt.Println(err)
+		return &httpResponse, err
+	}
 	request.Header = header
 	response, err := httpClient.client.Do(request)
 	httpResponse.Resp = response
