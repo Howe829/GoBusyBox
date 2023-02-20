@@ -18,14 +18,8 @@ func TestHttpClient_Get(t *testing.T) {
 	headers.Set(HeaderSecFetchSite, SecFetchSiteSameOrigin)
 	headers.Set(HeaderSecFetchUser, SecFetchUserDefault)
 	headers.Set(HeaderTe, TeTrailers)
-	client := HttpClient{EnableProxy: true, AllowRedirect: true}
-	res, err := client.Get("https://httpbin.org/ip", headers)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println(res.Text())
-	client.ChangeProxy()
-	res, err = client.Get("https://httpbin.org/ip", headers)
+	client := HttpClient{EnableProxy: false, AllowRedirect: true}
+	res, err := client.Get("http://127.0.0.1:8888/sku/inventory/push", headers)
 	if err != nil {
 		fmt.Println(err.Error())
 	}

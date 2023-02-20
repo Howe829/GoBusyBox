@@ -154,6 +154,8 @@ func (httpClient *HttpClient) Post(destination string, header http.Header, data 
 	}
 	request.Header = header
 	response, err := httpClient.client.Do(request)
+	httpResponse.Elapsed = time.Since(httpResponse.StartTime)
+
 	httpResponse.Resp = response
 	if err != nil {
 		return &httpResponse, err
@@ -162,28 +164,28 @@ func (httpClient *HttpClient) Post(destination string, header http.Header, data 
 	return &httpResponse, nil
 }
 func RequestTrack(response HttpResponse) {
-	elapsed := time.Since(response.StartTime)
-	response.Elapsed = elapsed
 
-	log.Println(fmt.Sprintf("%s STATUS CODE:%v COST:%s", response.Url, *response.StatusCode, elapsed))
+	log.Println(fmt.Sprintf("%s STATUS CODE:%v COST:%s", response.Url, *response.StatusCode, response.Elapsed))
 }
 
-func (httpResponse *HttpResponse) Json() (gjson.Result, error) {
+func (httpResponse *HttpResponse) Json() gjson.Result {
 	content, err := io.ReadAll(httpResponse.Resp.Body)
 	if err != nil {
-		return gjson.Result{}, err
+		log.Println(err)
+		return gjson.Result{}
 	}
 	defer httpResponse.Resp.Body.Close()
-	return gjson.Parse(string(content)), nil
+	return gjson.Parse(string(content))
 }
 
-func (httpResponse *HttpResponse) Text() (string, error) {
+func (httpResponse *HttpResponse) Text() string {
 	content, err := io.ReadAll(httpResponse.Resp.Body)
 	if err != nil {
-		return "", err
+		log.Println(err)
+		return ""
 	}
 	defer httpResponse.Resp.Body.Close()
-	return string(content), nil
+	return string(content)
 }
 
 func (httpClient *HttpClient) Get(destination string, header http.Header) (*HttpResponse, error) {
@@ -196,13 +198,17 @@ func (httpClient *HttpClient) Get(destination string, header http.Header) (*Http
 		StatusCode: &statusCode,
 		Url:        destination,
 		StartTime:  time.Now(),
-		Elapsed:    9999,
+		Elapsed:    0,
 	}
 	defer RequestTrack(httpResponse)
 	var body io.Reader
 	request, err := http.NewRequest("GET", destination, body)
+	httpResponse.Elapsed = time.Since(httpResponse.StartTime)
 	request.Header = header
 	response, err := httpClient.client.Do(request)
+	if err != nil {
+		return &httpResponse, err
+	}
 	statusCode = response.StatusCode
 	httpResponse.Resp = response
 	if err != nil {
