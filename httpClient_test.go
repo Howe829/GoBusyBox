@@ -2,6 +2,7 @@ package busybox
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"testing"
 )
@@ -18,12 +19,14 @@ func TestHttpClient_Get(t *testing.T) {
 	headers.Set(HeaderSecFetchSite, SecFetchSiteSameOrigin)
 	headers.Set(HeaderSecFetchUser, SecFetchUserDefault)
 	headers.Set(HeaderTe, TeTrailers)
-	client := HttpClient{EnableProxy: false, AllowRedirect: true}
-	res, err := client.Get("http://127.0.0.1:8888/sku/inventory/push", headers)
+	reTry := RetryConfig{ErrorCode: 429, Attempts: 3}
+
+	client := HttpClient{EnableProxy: true, AllowRedirect: false, Retry: reTry}
+	res, err := client.Get("https://httpbin.org/status/429", headers)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	fmt.Println(res.Text())
+	log.Println(res.Text(), res.StatusCode)
 
 	//if *res.StatusCode != 200 {
 	//	fmt.Println(res)

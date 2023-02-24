@@ -1,3 +1,5 @@
+github.com/rafaeljesus/retry-go v0.0.0-20171214204623-5981a380a879 h1:N482aqhcEGG1KL8VfsMUh1hAndWSXZyxlzroog7oq9w=
+github.com/rafaeljesus/retry-go v0.0.0-20171214204623-5981a380a879/go.mod h1:uve1vRfWBCIE8f4CrhS1UfYxdHnLMjpl6KOKA7IkH5g=
 github.com/tidwall/gjson v1.14.4 h1:uo0p8EbA09J7RQaflQ1aBRffTR7xedD2bcIVSYxLnkM=
 github.com/tidwall/gjson v1.14.4/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/match v1.1.1 h1:+Ho715JplO36QYgwN9PGYNhgZvoUSc9X2c80KVTi+GA=

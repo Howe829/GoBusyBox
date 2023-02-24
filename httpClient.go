@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/rafaeljesus/retry-go"
 	"github.com/tidwall/gjson"
 	"io"
 	"log"
@@ -63,12 +64,19 @@ func (proxyManager *ProxyManager) GetOne(index int) string {
 }
 
 type HttpResponse struct {
-	Method     string
-	Url        string
-	StartTime  time.Time
-	StatusCode *int
-	Elapsed    time.Duration
-	Resp       *http.Response
+	Method      string
+	Url         string
+	StartTime   time.Time
+	StatusCode  int
+	Elapsed     time.Duration
+	Resp        *http.Response
+	AttemptsNum int
+}
+
+type RetryConfig struct {
+	Attempts  int           //最大重试次数
+	SleepTime time.Duration //重试延迟时间
+	ErrorCode int
 }
 
 type HttpClient struct {
@@ -78,6 +86,7 @@ type HttpClient struct {
 	ProxyStr      string
 	AllowRedirect bool
 	Timeout       int
+	Retry         RetryConfig
 }
 
 func (httpClient *HttpClient) Init() {
@@ -110,21 +119,18 @@ func (httpClient *HttpClient) Post(destination string, header http.Header, data 
 	if !httpClient.ava {
 		httpClient.Init()
 	}
-	statusCode := -1
 	httpResponse := HttpResponse{
-		Method:     "POST",
-		StatusCode: &statusCode,
-		Url:        destination,
-		StartTime:  time.Now(),
-		Elapsed:    9999,
+		Method:    "POST",
+		Url:       destination,
+		StartTime: time.Now(),
 	}
-	defer RequestTrack(httpResponse)
+	defer RequestTrack(&httpResponse)
 	defer func() {
 		r := recover()
 		switch r.(type) {
 		case http.Response:
 			resp := r.(http.Response)
-			httpResponse.StatusCode = &resp.StatusCode
+			httpResponse.StatusCode = resp.StatusCode
 		}
 	}()
 	var body io.Reader
@@ -153,19 +159,24 @@ func (httpClient *HttpClient) Post(destination string, header http.Header, data 
 		return &httpResponse, err
 	}
 	request.Header = header
-	response, err := httpClient.client.Do(request)
-	httpResponse.Elapsed = time.Since(httpResponse.StartTime)
+	response, err := retry.DoHTTP(func() (*http.Response, error) {
+		return makeRequest(httpClient, request, &httpResponse)
+	}, httpClient.Retry.Attempts, httpClient.Retry.SleepTime)
 
-	httpResponse.Resp = response
+	if response != nil {
+		httpResponse.Elapsed += time.Since(httpResponse.StartTime)
+		httpResponse.StatusCode = response.StatusCode
+		httpResponse.Resp = response
+	}
+
 	if err != nil {
 		return &httpResponse, err
 	}
-	statusCode = response.StatusCode
 	return &httpResponse, nil
 }
-func RequestTrack(response HttpResponse) {
+func RequestTrack(response *HttpResponse) {
 
-	log.Println(fmt.Sprintf("%s STATUS CODE:%v COST:%s", response.Url, *response.StatusCode, response.Elapsed))
+	log.Println(fmt.Sprintf("%s STATUS CODE:%v COST:%s ATTEMPTS:%v", response.Url, response.StatusCode, response.Elapsed, response.AttemptsNum))
 }
 
 func (httpResponse *HttpResponse) Json() gjson.Result {
@@ -179,6 +190,9 @@ func (httpResponse *HttpResponse) Json() gjson.Result {
 }
 
 func (httpResponse *HttpResponse) Text() string {
+	if httpResponse.Resp == nil {
+		return ""
+	}
 	content, err := io.ReadAll(httpResponse.Resp.Body)
 	if err != nil {
 		log.Println(err)
@@ -188,29 +202,46 @@ func (httpResponse *HttpResponse) Text() string {
 	return string(content)
 }
 
+func makeRequest(httpClient *HttpClient, request *http.Request, httpResponse *HttpResponse) (*http.Response, error) {
+	httpResponse.AttemptsNum += 1
+	response, err := httpClient.client.Do(request)
+
+	if err != nil {
+		return response, err
+	}
+
+	if response.StatusCode == httpClient.Retry.ErrorCode {
+		return response, errors.New(fmt.Sprintf("%v Occurred", httpClient.Retry.ErrorCode))
+	}
+	return response, err
+}
+
 func (httpClient *HttpClient) Get(destination string, header http.Header) (*HttpResponse, error) {
 	if !httpClient.ava {
 		httpClient.Init()
 	}
-	statusCode := -1
 	httpResponse := HttpResponse{
-		Method:     "GET",
-		StatusCode: &statusCode,
-		Url:        destination,
-		StartTime:  time.Now(),
-		Elapsed:    0,
+		Method:    "GET",
+		Url:       destination,
+		StartTime: time.Now(),
 	}
-	defer RequestTrack(httpResponse)
+	defer RequestTrack(&httpResponse)
 	var body io.Reader
 	request, err := http.NewRequest("GET", destination, body)
-	httpResponse.Elapsed = time.Since(httpResponse.StartTime)
 	request.Header = header
-	response, err := httpClient.client.Do(request)
+	response, err := retry.DoHTTP(func() (*http.Response, error) {
+		return makeRequest(httpClient, request, &httpResponse)
+	}, httpClient.Retry.Attempts, httpClient.Retry.SleepTime)
+	if response != nil {
+		httpResponse.Elapsed += time.Since(httpResponse.StartTime)
+		httpResponse.StatusCode = response.StatusCode
+		httpResponse.Resp = response
+	}
+
 	if err != nil {
 		return &httpResponse, err
 	}
-	statusCode = response.StatusCode
-	httpResponse.Resp = response
+
 	if err != nil {
 		return &httpResponse, err
 	}
