@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -23,6 +24,7 @@ type ProxyManager struct {
 }
 
 var ProxyM = &ProxyManager{}
+var HostName string
 
 func (proxyManager *ProxyManager) Init() {
 	if proxyManager.Ava {
@@ -176,7 +178,7 @@ func (httpClient *HttpClient) Post(destination string, header http.Header, data 
 }
 func RequestTrack(response *HttpResponse) {
 
-	log.Println(fmt.Sprintf("%s STATUS CODE:%v COST:%s ATTEMPTS:%v", response.Url, response.StatusCode, response.Elapsed, response.AttemptsNum))
+	log.Println(fmt.Sprintf("%s %s STATUS CODE:%v COST:%s ATTEMPTS:%v", HostName, response.Url, response.StatusCode, response.Elapsed, response.AttemptsNum))
 }
 
 func (httpResponse *HttpResponse) Json() gjson.Result {
@@ -254,4 +256,8 @@ func myCheckRedirect(req *http.Request, via []*http.Request) error {
 		return errors.New("stop redirects")
 	}
 	return nil
+}
+
+func init() {
+	HostName, _ = os.Hostname()
 }
