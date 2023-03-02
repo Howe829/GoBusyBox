@@ -22,7 +22,7 @@ func TestHttpClient_Get(t *testing.T) {
 	reTry := RetryConfig{ErrorCode: 429, Attempts: 3}
 
 	client := HttpClient{EnableProxy: true, AllowRedirect: false, Retry: reTry}
-	res, err := client.Get("https://httpbin.org/status/429", headers)
+	res, err := client.Get("https://jojnninininininini.org/stbatus/429", headers)
 	if err != nil {
 		fmt.Println(err.Error())
 	}

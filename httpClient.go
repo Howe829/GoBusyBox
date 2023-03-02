@@ -182,6 +182,9 @@ func RequestTrack(response *HttpResponse) {
 }
 
 func (httpResponse *HttpResponse) Json() gjson.Result {
+	if httpResponse.Resp == nil || httpResponse.Resp.Body == nil {
+		return gjson.Result{}
+	}
 	content, err := io.ReadAll(httpResponse.Resp.Body)
 	if err != nil {
 		log.Println(err)
@@ -192,7 +195,7 @@ func (httpResponse *HttpResponse) Json() gjson.Result {
 }
 
 func (httpResponse *HttpResponse) Text() string {
-	if httpResponse.Resp == nil {
+	if httpResponse.Resp == nil || httpResponse.Resp.Body == nil {
 		return ""
 	}
 	content, err := io.ReadAll(httpResponse.Resp.Body)
