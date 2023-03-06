@@ -21,7 +21,7 @@ func TestHttpClient_Get(t *testing.T) {
 	headers.Set(HeaderTe, TeTrailers)
 	reTry := RetryConfig{ErrorCode: 429, Attempts: 3}
 
-	client := NewHttpClient(false, false, reTry, 0)
+	client := NewHttpClient(true, false, reTry, 0)
 	cookies := map[string]string{
 		"JSESSIONID":     "50C97B005A48F95865E8ABF2BE8CBB90.web01",
 		"lang":           "en",
@@ -33,8 +33,8 @@ func TestHttpClient_Get(t *testing.T) {
 		"AWSALB":         "/kX0tLxKrdnJGgaIuD/fxjBhg7PGcHclMM7AAiE7nHJxaugW0p4/b84lpsi/+l79n3qiGpytl3cgoFhTK00yCqPP9CEtw/iCLxXAF6qJAHLz8j5HpdpS0tc1prp3",
 		"AWSALBCORS":     "/kX0tLxKrdnJGgaIuD/fxjBhg7PGcHclMM7AAiE7nHJxaugW0p4/b84lpsi/+l79n3qiGpytl3cgoFhTK00yCqPP9CEtw/iCLxXAF6qJAHLz8j5HpdpS0tc1prp3",
 	}
-	client.SetCookie("https://httpbin.org/cookies", cookies)
-	res, err := client.Get("https://httpbin.org/cookies", headers)
+	client.SetCookie("https://httpbin.org/ip", cookies)
+	res, err := client.Get("https://httpbin.org/ip", headers)
 	if err != nil {
 		fmt.Println(err.Error())
 	}

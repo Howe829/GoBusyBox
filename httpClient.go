@@ -37,6 +37,10 @@ func (proxyManager *ProxyManager) Init() {
 	proxyLines := strings.Split(fileContent, "\n")
 	for line := range proxyLines {
 		proxySegs := strings.Split(proxyLines[line], ":")
+		if strings.HasPrefix(proxyLines[line], "http") {
+			proxyManager.proxies = append(proxyManager.proxies, proxyLines[line])
+			continue
+		}
 		if len(proxySegs) < 4 {
 			fmt.Println(fmt.Sprintf("PROXY %s LINE: %d FORMAT ERROR WILL BE IGNORED", proxyLines[line], line))
 			continue
@@ -53,8 +57,11 @@ func (proxyManager *ProxyManager) GetRandomOne() string {
 		proxyManager.Init()
 	}
 	rand.Seed(time.Now().Unix())
-
-	index := rand.Intn(len(proxyManager.proxies))
+	length := len(proxyManager.proxies)
+	if length == 0 {
+		log.Fatal("ERR, CHECK YOUR proxies.txt")
+	}
+	index := rand.Intn(length)
 	return proxyManager.proxies[index]
 }
 
