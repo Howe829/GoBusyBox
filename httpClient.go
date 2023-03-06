@@ -83,7 +83,6 @@ type RetryConfig struct {
 
 type HttpClient struct {
 	EnableProxy   bool
-	ava           bool
 	client        *http.Client
 	ProxyStr      string
 	AllowRedirect bool
@@ -91,10 +90,9 @@ type HttpClient struct {
 	Retry         RetryConfig
 }
 
-func (httpClient *HttpClient) Init() {
-	if httpClient.Timeout == 0 {
-		httpClient.Timeout = 60
-	}
+func NewHttpClient(enableProxy, followRedirect bool, retryConfig RetryConfig, timeout int) *HttpClient {
+
+	httpClient := HttpClient{EnableProxy: enableProxy, AllowRedirect: followRedirect, Retry: retryConfig, Timeout: timeout}
 	gCurCookiejar, _ := cookiejar.New(nil)
 	httpClient.client = &http.Client{Timeout: time.Duration(httpClient.Timeout) * time.Second, Jar: gCurCookiejar}
 	if httpClient.EnableProxy {
@@ -104,7 +102,7 @@ func (httpClient *HttpClient) Init() {
 	if !httpClient.AllowRedirect {
 		httpClient.client.CheckRedirect = myCheckRedirect
 	}
-	httpClient.ava = true
+	return &httpClient
 }
 
 func (httpClient *HttpClient) ChangeProxy() {
@@ -118,9 +116,7 @@ func (httpClient *HttpClient) ChangeProxy() {
 }
 
 func (httpClient *HttpClient) Post(destination string, header http.Header, data interface{}) (*HttpResponse, error) {
-	if !httpClient.ava {
-		httpClient.Init()
-	}
+
 	httpResponse := HttpResponse{
 		Method:    "POST",
 		Url:       destination,
@@ -221,10 +217,20 @@ func makeRequest(httpClient *HttpClient, request *http.Request, httpResponse *Ht
 	return response, err
 }
 
-func (httpClient *HttpClient) Get(destination string, header http.Header) (*HttpResponse, error) {
-	if !httpClient.ava {
-		httpClient.Init()
+func (httpClient *HttpClient) SetCookie(destination string, cookies map[string]string) {
+	httpCookies := make([]*http.Cookie, 0)
+	for k, v := range cookies {
+		cookie := &http.Cookie{Name: k, Value: v}
+		httpCookies = append(httpCookies, cookie)
 	}
+	urlObj, _ := url.Parse(destination)
+
+	httpClient.client.Jar.SetCookies(urlObj, httpCookies)
+
+}
+
+func (httpClient *HttpClient) Get(destination string, header http.Header) (*HttpResponse, error) {
+
 	httpResponse := HttpResponse{
 		Method:    "GET",
 		Url:       destination,
@@ -233,6 +239,7 @@ func (httpClient *HttpClient) Get(destination string, header http.Header) (*Http
 	defer RequestTrack(&httpResponse)
 	var body io.Reader
 	request, err := http.NewRequest("GET", destination, body)
+
 	request.Header = header
 	response, err := retry.DoHTTP(func() (*http.Response, error) {
 		return makeRequest(httpClient, request, &httpResponse)
