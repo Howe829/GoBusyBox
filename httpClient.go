@@ -45,11 +45,18 @@ func (proxyManager *ProxyManager) Init() {
 			fmt.Println(fmt.Sprintf("PROXY %s LINE: %d FORMAT ERROR WILL BE IGNORED", proxyLines[line], line))
 			continue
 		}
-		proxy := fmt.Sprintf("http://%s:%s@%s:%s", proxySegs[2], proxySegs[3], proxySegs[0], proxySegs[1])
+		proxy := fmt.Sprintf("http://%s:%s@%s:%s", strings.TrimRight(proxySegs[2], "\r\n"), strings.TrimRight(proxySegs[3], "\r\n"), strings.TrimRight(proxySegs[0], "\r\n"), strings.TrimRight(proxySegs[1], "\r\n"))
 		proxyManager.proxies = append(proxyManager.proxies, proxy)
 	}
 	proxyManager.Ava = true
 
+}
+
+func getRandomDigit(n int) int {
+	source := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(source)
+	randomDigit := r.Intn(n)
+	return randomDigit
 }
 
 func (proxyManager *ProxyManager) GetRandomOne() string {
@@ -61,7 +68,7 @@ func (proxyManager *ProxyManager) GetRandomOne() string {
 	if length == 0 {
 		log.Fatal("ERR, CHECK YOUR proxies.txt")
 	}
-	index := rand.Intn(length)
+	index := getRandomDigit(length)
 	return proxyManager.proxies[index]
 }
 
@@ -114,7 +121,10 @@ func NewHttpClient(enableProxy, followRedirect bool, retryConfig RetryConfig, ti
 
 func (httpClient *HttpClient) ChangeProxy() {
 	httpClient.ProxyStr = ProxyM.GetRandomOne()
-	proxy, _ := url.Parse(httpClient.ProxyStr)
+	proxy, err := url.Parse(httpClient.ProxyStr)
+	if err != nil{
+		log.Println("Warning: proxy is not valid!", err)
+	}
 	tr := &http.Transport{
 		Proxy:           http.ProxyURL(proxy),
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
