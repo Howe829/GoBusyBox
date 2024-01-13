@@ -138,7 +138,17 @@ func (httpClient *HttpClient) GetCookieString(host string) string {
     for _, v := range clientCookies{
 		cookieStrings = append(cookieStrings, v.String())
 	}
-	return strings.Join(cookieStrings, "")
+	return strings.Join(cookieStrings, ";")
+}
+
+
+func (httpClient *HttpClient) GetCookies(host string) map[string] string{
+	clientCookies := httpClient.client.Jar.Cookies(&url.URL{Scheme: "https", Host: host, Path: "/"})
+	cookieStrings := make(map[string]string)
+    for _, v := range clientCookies{
+		cookieStrings[v.Name] = v.Value
+	}
+	return cookieStrings
 }
 
 
