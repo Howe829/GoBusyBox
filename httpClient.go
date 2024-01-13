@@ -132,6 +132,16 @@ func (httpClient *HttpClient) ChangeProxy() {
 	httpClient.client.Transport = tr
 }
 
+func (httpClient *HttpClient) GetCookieString(host string) string {
+	clientCookies := httpClient.client.Jar.Cookies(&url.URL{Scheme: "https", Host: host, Path: "/"})
+	cookieStrings := make([]string, 0)
+    for _, v := range clientCookies{
+		cookieStrings = append(cookieStrings, v.String())
+	}
+	return strings.Join(cookieStrings, "")
+}
+
+
 func (httpClient *HttpClient) Post(destination string, header http.Header, data interface{}) (*HttpResponse, error) {
 
 	httpResponse := HttpResponse{

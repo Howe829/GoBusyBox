@@ -34,11 +34,14 @@ func TestHttpClient_Get(t *testing.T) {
 		"AWSALBCORS":     "/kX0tLxKrdnJGgaIuD/fxjBhg7PGcHclMM7AAiE7nHJxaugW0p4/b84lpsi/+l79n3qiGpytl3cgoFhTK00yCqPP9CEtw/iCLxXAF6qJAHLz8j5HpdpS0tc1prp3",
 	}
 	client.SetCookie("https://httpbin.org/ip", cookies)
-	res, err := client.Get("https://httpbin.org/ip", headers)
+	_, err := client.Get("https://httpbin.org/ip", headers)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	log.Println(res.Text(), res.StatusCode)
+	cookieString := client.GetCookieString("httpbin.org")
+    
+	
+	log.Println(cookieString, client.ProxyStr)
 
 	//if *res.StatusCode != 200 {
 	//	fmt.Println(res)
