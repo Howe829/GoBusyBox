@@ -186,7 +186,7 @@ func (httpClient *HttpClient) Request(Method, destination string, header http.He
 		return &httpResponse, errors.New("value error")
 	}
 
-	request, err := http.NewRequest("POST", destination, body)
+	request, err := http.NewRequest(Method, destination, body)
 	if err != nil {
 		fmt.Println(err)
 		return &httpResponse, err
