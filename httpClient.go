@@ -122,7 +122,7 @@ func NewHttpClient(enableProxy, followRedirect bool, retryConfig RetryConfig, ti
 func (httpClient *HttpClient) ChangeProxy() {
 	httpClient.ProxyStr = ProxyM.GetRandomOne()
 	proxy, err := url.Parse(httpClient.ProxyStr)
-	if err != nil{
+	if err != nil {
 		log.Println("Warning: proxy is not valid!", err)
 	}
 	tr := &http.Transport{
@@ -135,27 +135,25 @@ func (httpClient *HttpClient) ChangeProxy() {
 func (httpClient *HttpClient) GetCookieString(host string) string {
 	clientCookies := httpClient.client.Jar.Cookies(&url.URL{Scheme: "https", Host: host, Path: "/"})
 	cookieStrings := make([]string, 0)
-    for _, v := range clientCookies{
+	for _, v := range clientCookies {
 		cookieStrings = append(cookieStrings, v.String())
 	}
 	return strings.Join(cookieStrings, ";")
 }
 
-
-func (httpClient *HttpClient) GetCookies(host string) []map[string] string{
+func (httpClient *HttpClient) GetCookies(host string) []map[string]string {
 	clientCookies := httpClient.client.Jar.Cookies(&url.URL{Scheme: "https", Host: host, Path: "/"})
 	cookieStrings := make([]map[string]string, 0)
-    for _, v := range clientCookies{
-		cookieStrings = append(cookieStrings, map[string]string{"name": v.Name, "value":v.Value})
+	for _, v := range clientCookies {
+		cookieStrings = append(cookieStrings, map[string]string{"name": v.Name, "value": v.Value})
 	}
 	return cookieStrings
 }
 
-
-func (httpClient *HttpClient) Post(destination string, header http.Header, data interface{}) (*HttpResponse, error) {
+func (httpClient *HttpClient) Request(Method, destination string, header http.Header, data interface{}) (*HttpResponse, error) {
 
 	httpResponse := HttpResponse{
-		Method:    "POST",
+		Method:    Method,
 		Url:       destination,
 		StartTime: time.Now(),
 	}
@@ -208,6 +206,14 @@ func (httpClient *HttpClient) Post(destination string, header http.Header, data 
 		return &httpResponse, err
 	}
 	return &httpResponse, nil
+}
+
+func (httpClient *HttpClient) Post(destination string, header http.Header, data interface{}) (*HttpResponse, error) {
+	return httpClient.Request("POST", destination, header, data)
+}
+
+func (httpClient *HttpClient) Patch(destination string, header http.Header, data interface{}) (*HttpResponse, error) {
+	return httpClient.Request("PATCH", destination, header, data)
 }
 func RequestTrack(response *HttpResponse) {
 
