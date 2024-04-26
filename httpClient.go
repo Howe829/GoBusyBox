@@ -215,6 +215,10 @@ func (httpClient *HttpClient) Post(destination string, header http.Header, data 
 func (httpClient *HttpClient) Patch(destination string, header http.Header, data interface{}) (*HttpResponse, error) {
 	return httpClient.Request("PATCH", destination, header, data)
 }
+
+func (httpClient *HttpClient) Put(destination string, header http.Header, data interface{}) (*HttpResponse, error) {
+	return httpClient.Request("PUT", destination, header, data)
+}
 func RequestTrack(response *HttpResponse) {
 
 	log.Println(fmt.Sprintf("%s %s STATUS CODE:%v COST:%s ATTEMPTS:%v", HostName, response.Url, response.StatusCode, response.Elapsed, response.AttemptsNum))
