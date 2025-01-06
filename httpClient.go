@@ -264,7 +264,7 @@ func makeRequest(httpClient *HttpClient, request *http.Request, httpResponse *Ht
 	return response, err
 }
 
-func (httpClient *HttpClient) SetCookie(destination string, cookies map[string]string) {
+func (httpClient *HttpClient) SetCookies(destination string, cookies map[string]string) {
 	httpCookies := make([]*http.Cookie, 0)
 	for k, v := range cookies {
 		cookie := &http.Cookie{Name: k, Value: v}
@@ -273,6 +273,13 @@ func (httpClient *HttpClient) SetCookie(destination string, cookies map[string]s
 	urlObj, _ := url.Parse(destination)
 
 	httpClient.client.Jar.SetCookies(urlObj, httpCookies)
+
+}
+
+func (httpClient *HttpClient) SetCookie(destination string, cookies []*http.Cookie) {
+	urlObj, _ := url.Parse(destination)
+
+	httpClient.client.Jar.SetCookies(urlObj, cookies)
 
 }
 

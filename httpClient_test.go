@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"testing"
+	"time"
 )
 
 func TestHttpClient_Get(t *testing.T) {
@@ -22,27 +23,44 @@ func TestHttpClient_Get(t *testing.T) {
 	reTry := RetryConfig{ErrorCode: 429, Attempts: 3}
 
 	client := NewHttpClient(true, false, reTry, 0)
-	cookies := map[string]string{
-		"JSESSIONID":     "50C97B005A48F95865E8ABF2BE8CBB90.web01",
-		"lang":           "en",
-		"cl-font-size":   "16px",
-		"cl-theme-color": "default",
-		"_ga":            "GA1.2.1334036334.1676380575",
-		"_ga_0M1K5NPYZE": "GS1.1.1677677203.6.0.1677677330.0.0.0",
-		"_ga_BD9VNGC0M6": "GS1.1.1677677203.6.0.1677677330.0.0.0",
-		"AWSALB":         "/kX0tLxKrdnJGgaIuD/fxjBhg7PGcHclMM7AAiE7nHJxaugW0p4/b84lpsi/+l79n3qiGpytl3cgoFhTK00yCqPP9CEtw/iCLxXAF6qJAHLz8j5HpdpS0tc1prp3",
-		"AWSALBCORS":     "/kX0tLxKrdnJGgaIuD/fxjBhg7PGcHclMM7AAiE7nHJxaugW0p4/b84lpsi/+l79n3qiGpytl3cgoFhTK00yCqPP9CEtw/iCLxXAF6qJAHLz8j5HpdpS0tc1prp3",
+	cookies := []*http.Cookie{
+		{
+			Name:     "session_id",
+			Value:    "abc123",
+			Domain:   ".httpbin.org", // Domain for which the cookie is valid
+			Path:     "/",
+			Expires:  time.Now().Add(24 * time.Hour), // Expiry set to 24 hours
+			HttpOnly: true,
+			Secure:   true,
+		},
+		{
+			Name:     "user_pref",
+			Value:    "dark_mode",
+			Domain:   ".httpbin.org", // Same domain for the cookie
+			Path:     "/",
+			Expires:  time.Now().Add(48 * time.Hour), // Expiry set to 48 hours
+			HttpOnly: false,
+			Secure:   false, // Could be false for non-HTTPS traffic
+		},
+		{
+			Name:     "tracking_id",
+			Value:    "xyz456",
+			Domain:   ".httpbin.org",
+			Path:     "/",
+			Expires:  time.Now().Add(72 * time.Hour), // Expiry set to 72 hours
+			HttpOnly: false,
+			Secure:   true,
+		},
 	}
-	client.SetCookie("https://httpbin.org/ip", cookies)
-	_, err := client.Get("https://httpbin.org/ip", headers)
+	client.SetCookie("https://httpbin.org/", cookies)
+	resp, err := client.Get("https://httpbin.org/cookies", headers)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	cookieString := client.GetCookieString("httpbin.org")
-    
-	
-	log.Println(cookieString, client.ProxyStr)
 
+	log.Println(cookieString, client.ProxyStr)
+	log.Println(resp.Text())
 	//if *res.StatusCode != 200 {
 	//	fmt.Println(res)
 	//} else {
