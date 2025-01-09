@@ -102,11 +102,26 @@ type HttpClient struct {
 	AllowRedirect bool
 	Timeout       int
 	Retry         RetryConfig
+	Debug         bool
 }
 
-func NewHttpClient(enableProxy, followRedirect bool, retryConfig RetryConfig, timeout int) *HttpClient {
+type ClientConfig struct {
+	EnableProxy    bool
+	FollowRedirect bool
+	Retry          RetryConfig
+	Timeout        int
+	Debug          bool
+}
 
-	httpClient := HttpClient{EnableProxy: enableProxy, AllowRedirect: followRedirect, Retry: retryConfig, Timeout: timeout}
+func NewHttpClient(config ClientConfig) *HttpClient {
+
+	httpClient := HttpClient{
+		EnableProxy:   config.EnableProxy,
+		AllowRedirect: config.FollowRedirect,
+		Retry:         config.Retry,
+		Timeout:       config.Timeout,
+		Debug:         config.Debug || os.Getenv("HTTP_DEBUG") == "true",
+	}
 	gCurCookiejar, _ := cookiejar.New(nil)
 	httpClient.client = &http.Client{Timeout: time.Duration(httpClient.Timeout) * time.Second, Jar: gCurCookiejar}
 	if httpClient.EnableProxy {
@@ -157,7 +172,7 @@ func (httpClient *HttpClient) Request(Method, destination string, header http.He
 		Url:       destination,
 		StartTime: time.Now(),
 	}
-	defer RequestTrack(&httpResponse)
+	defer httpClient.RequestTrack(&httpResponse)
 	defer func() {
 		r := recover()
 		switch r.(type) {
@@ -219,7 +234,10 @@ func (httpClient *HttpClient) Patch(destination string, header http.Header, data
 func (httpClient *HttpClient) Put(destination string, header http.Header, data interface{}) (*HttpResponse, error) {
 	return httpClient.Request("PUT", destination, header, data)
 }
-func RequestTrack(response *HttpResponse) {
+func (httpClient *HttpClient) RequestTrack(response *HttpResponse) {
+	if httpClient.Debug == false {
+		return
+	}
 
 	log.Println(fmt.Sprintf("%s %s STATUS CODE:%v COST:%s ATTEMPTS:%v", HostName, response.Url, response.StatusCode, response.Elapsed, response.AttemptsNum))
 }
@@ -290,7 +308,7 @@ func (httpClient *HttpClient) Get(destination string, header http.Header) (*Http
 		Url:       destination,
 		StartTime: time.Now(),
 	}
-	defer RequestTrack(&httpResponse)
+	defer httpClient.RequestTrack(&httpResponse)
 	var body io.Reader
 	request, err := http.NewRequest("GET", destination, body)
 
