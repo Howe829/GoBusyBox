@@ -22,7 +22,7 @@ func TestHttpClient_Get(t *testing.T) {
 	headers.Set(HeaderTe, TeTrailers)
 	reTry := RetryConfig{ErrorCode: 429, Attempts: 3}
 
-	client := NewHttpClient(ClientConfig{Retry: reTry})
+	client := NewHttpClient(ClientConfig{Retry: reTry, Debug: true})
 	cookies := []*http.Cookie{
 		{
 			Name:     "session_id",

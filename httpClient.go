@@ -239,7 +239,7 @@ func (httpClient *HttpClient) RequestTrack(response *HttpResponse) {
 		return
 	}
 
-	log.Println(fmt.Sprintf("%s %s STATUS CODE:%v COST:%s ATTEMPTS:%v", HostName, response.Url, response.StatusCode, response.Elapsed, response.AttemptsNum))
+	log.Println(fmt.Sprintf("%s %s STATUS CODE:%v COST:%s ATTEMPTS:%v", HostName, response.Url, response.StatusCode, response.Elapsed.Truncate(time.Millisecond), response.AttemptsNum))
 }
 
 func (httpResponse *HttpResponse) Json() gjson.Result {
