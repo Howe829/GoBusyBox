@@ -1,7 +1,6 @@
 package busybox
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"testing"
@@ -21,8 +20,8 @@ func TestHttpClient_Get(t *testing.T) {
 	headers.Set(HeaderSecFetchUser, SecFetchUserDefault)
 	headers.Set(HeaderTe, TeTrailers)
 	reTry := RetryConfig{ErrorCode: 429, Attempts: 3}
-
-	client := NewHttpClient(ClientConfig{Retry: reTry, Debug: true})
+	proxy := ProxyM.GetRandomOne()
+	client := NewHttpClient(ClientConfig{Retry: reTry, Debug: true, Proxy: &proxy})
 	cookies := []*http.Cookie{
 		{
 			Name:     "session_id",
@@ -53,13 +52,13 @@ func TestHttpClient_Get(t *testing.T) {
 		},
 	}
 	client.SetCookie("https://httpbin.org/", cookies)
-	resp, err := client.Get("https://httpbin.org/cookies", headers)
+	resp, err := client.Get("https://httpbin.org/ip", headers)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatalln(err.Error())
 	}
 	cookieString := client.GetCookieString("httpbin.org")
 
-	log.Println(cookieString, client.ProxyStr)
+	log.Println(cookieString, client.Proxy.String())
 	log.Println(resp.Text())
 	//if *res.StatusCode != 200 {
 	//	fmt.Println(res)

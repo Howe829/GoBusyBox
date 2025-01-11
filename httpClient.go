@@ -18,8 +18,19 @@ import (
 	"time"
 )
 
+type Proxy struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+}
+
+func (proxy *Proxy) String() string {
+	return fmt.Sprintf("http://%s:%s@%s:%s", proxy.Username, proxy.Password, proxy.Host, proxy.Port)
+}
+
 type ProxyManager struct {
-	proxies []string
+	proxies []Proxy
 	Ava     bool
 }
 
@@ -37,15 +48,16 @@ func (proxyManager *ProxyManager) Init() {
 	proxyLines := strings.Split(fileContent, "\n")
 	for line := range proxyLines {
 		proxySegs := strings.Split(proxyLines[line], ":")
-		if strings.HasPrefix(proxyLines[line], "http") {
-			proxyManager.proxies = append(proxyManager.proxies, proxyLines[line])
-			continue
-		}
 		if len(proxySegs) < 4 {
 			fmt.Println(fmt.Sprintf("PROXY %s LINE: %d FORMAT ERROR WILL BE IGNORED", proxyLines[line], line))
 			continue
 		}
-		proxy := fmt.Sprintf("http://%s:%s@%s:%s", strings.TrimRight(proxySegs[2], "\r\n"), strings.TrimRight(proxySegs[3], "\r\n"), strings.TrimRight(proxySegs[0], "\r\n"), strings.TrimRight(proxySegs[1], "\r\n"))
+		proxy := Proxy{
+			Host:     strings.TrimRight(proxySegs[0], "\r\n"),
+			Port:     strings.TrimRight(proxySegs[1], "\r\n"),
+			Username: strings.TrimRight(proxySegs[2], "\r\n"),
+			Password: strings.TrimRight(proxySegs[3], "\r\n"),
+		}
 		proxyManager.proxies = append(proxyManager.proxies, proxy)
 	}
 	proxyManager.Ava = true
@@ -53,17 +65,14 @@ func (proxyManager *ProxyManager) Init() {
 }
 
 func getRandomDigit(n int) int {
-	source := rand.NewSource(time.Now().UnixNano())
-	r := rand.New(source)
-	randomDigit := r.Intn(n)
+	randomDigit := rand.Intn(n)
 	return randomDigit
 }
 
-func (proxyManager *ProxyManager) GetRandomOne() string {
+func (proxyManager *ProxyManager) GetRandomOne() Proxy {
 	if !proxyManager.Ava {
 		proxyManager.Init()
 	}
-	rand.Seed(time.Now().Unix())
 	length := len(proxyManager.proxies)
 	if length == 0 {
 		log.Fatal("ERR, CHECK YOUR proxies.txt")
@@ -72,7 +81,7 @@ func (proxyManager *ProxyManager) GetRandomOne() string {
 	return proxyManager.proxies[index]
 }
 
-func (proxyManager *ProxyManager) GetOne(index int) string {
+func (proxyManager *ProxyManager) GetOne(index int) Proxy {
 	if !proxyManager.Ava {
 		proxyManager.Init()
 	}
@@ -96,9 +105,8 @@ type RetryConfig struct {
 }
 
 type HttpClient struct {
-	EnableProxy   bool
 	client        *http.Client
-	ProxyStr      string
+	Proxy         *Proxy
 	AllowRedirect bool
 	Timeout       int
 	Retry         RetryConfig
@@ -106,7 +114,7 @@ type HttpClient struct {
 }
 
 type ClientConfig struct {
-	EnableProxy    bool
+	Proxy          *Proxy
 	FollowRedirect bool
 	Retry          RetryConfig
 	Timeout        int
@@ -116,7 +124,7 @@ type ClientConfig struct {
 func NewHttpClient(config ClientConfig) *HttpClient {
 
 	httpClient := HttpClient{
-		EnableProxy:   config.EnableProxy,
+		Proxy:         config.Proxy,
 		AllowRedirect: config.FollowRedirect,
 		Retry:         config.Retry,
 		Timeout:       config.Timeout,
@@ -124,8 +132,8 @@ func NewHttpClient(config ClientConfig) *HttpClient {
 	}
 	gCurCookiejar, _ := cookiejar.New(nil)
 	httpClient.client = &http.Client{Timeout: time.Duration(httpClient.Timeout) * time.Second, Jar: gCurCookiejar}
-	if httpClient.EnableProxy {
-		httpClient.ChangeProxy()
+	if httpClient.Proxy != nil {
+		httpClient.SetProxy(httpClient.Proxy)
 	}
 
 	if !httpClient.AllowRedirect {
@@ -134,14 +142,14 @@ func NewHttpClient(config ClientConfig) *HttpClient {
 	return &httpClient
 }
 
-func (httpClient *HttpClient) ChangeProxy() {
-	httpClient.ProxyStr = ProxyM.GetRandomOne()
-	proxy, err := url.Parse(httpClient.ProxyStr)
+func (httpClient *HttpClient) SetProxy(proxy *Proxy) {
+	httpClient.Proxy = proxy
+	proxyUrl, err := url.Parse(httpClient.Proxy.String())
 	if err != nil {
 		log.Println("Warning: proxy is not valid!", err)
 	}
 	tr := &http.Transport{
-		Proxy:           http.ProxyURL(proxy),
+		Proxy:           http.ProxyURL(proxyUrl),
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	httpClient.client.Transport = tr

@@ -1,6 +1,6 @@
 module github.com/Howe829/GoBusyBox
 
-go 1.19
+go 1.23.4
 
 require (
 	github.com/rafaeljesus/retry-go v0.0.0-20171214204623-5981a380a879
