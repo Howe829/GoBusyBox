@@ -30,7 +30,7 @@ func (proxy *Proxy) String() string {
 }
 
 func (proxy *Proxy) RawString() string {
-	return fmt.Sprintf("%s:%s@%s:%s", proxy.Host, proxy.Port, proxy.Username, proxy.Password)
+	return fmt.Sprintf("%s:%s:%s:%s", proxy.Host, proxy.Port, proxy.Username, proxy.Password)
 }
 
 type ProxyManager struct {
