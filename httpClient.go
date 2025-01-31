@@ -29,6 +29,10 @@ func (proxy *Proxy) String() string {
 	return fmt.Sprintf("http://%s:%s@%s:%s", proxy.Username, proxy.Password, proxy.Host, proxy.Port)
 }
 
+func (proxy *Proxy) RawString() string {
+	return fmt.Sprintf("%s:%s@%s:%s", proxy.Host, proxy.Port, proxy.Username, proxy.Password)
+}
+
 type ProxyManager struct {
 	proxies []Proxy
 	Ava     bool
