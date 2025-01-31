@@ -26,10 +26,16 @@ type Proxy struct {
 }
 
 func (proxy *Proxy) String() string {
+	if proxy.Username == "" && proxy.Password == "" {
+		return fmt.Sprintf("http://%s:%s", proxy.Host, proxy.Port)
+	}
 	return fmt.Sprintf("http://%s:%s@%s:%s", proxy.Username, proxy.Password, proxy.Host, proxy.Port)
 }
 
 func (proxy *Proxy) RawString() string {
+	if proxy.Username == "" && proxy.Password == "" {
+		return fmt.Sprintf("%s:%s", proxy.Host, proxy.Port)
+	}
 	return fmt.Sprintf("%s:%s:%s:%s", proxy.Host, proxy.Port, proxy.Username, proxy.Password)
 }
 
@@ -52,17 +58,22 @@ func (proxyManager *ProxyManager) Init() {
 	proxyLines := strings.Split(fileContent, "\n")
 	for line := range proxyLines {
 		proxySegs := strings.Split(proxyLines[line], ":")
-		if len(proxySegs) < 4 {
-			fmt.Println(fmt.Sprintf("PROXY %s LINE: %d FORMAT ERROR WILL BE IGNORED", proxyLines[line], line))
-			continue
+		if len(proxySegs) == 4 {
+			proxy := Proxy{
+				Host:     strings.TrimRight(proxySegs[0], "\r\n"),
+				Port:     strings.TrimRight(proxySegs[1], "\r\n"),
+				Username: strings.TrimRight(proxySegs[2], "\r\n"),
+				Password: strings.TrimRight(proxySegs[3], "\r\n"),
+			}
+			proxyManager.proxies = append(proxyManager.proxies, proxy)
+		} else if len(proxySegs) == 2 {
+
+			proxy := Proxy{
+				Host: strings.TrimRight(proxySegs[0], "\r\n"),
+				Port: strings.TrimRight(proxySegs[1], "\r\n"),
+			}
+			proxyManager.proxies = append(proxyManager.proxies, proxy)
 		}
-		proxy := Proxy{
-			Host:     strings.TrimRight(proxySegs[0], "\r\n"),
-			Port:     strings.TrimRight(proxySegs[1], "\r\n"),
-			Username: strings.TrimRight(proxySegs[2], "\r\n"),
-			Password: strings.TrimRight(proxySegs[3], "\r\n"),
-		}
-		proxyManager.proxies = append(proxyManager.proxies, proxy)
 	}
 	proxyManager.Ava = true
 
